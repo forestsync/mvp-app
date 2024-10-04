@@ -8,6 +8,7 @@ const { maptilerAPIKey } = fromEnv({
 
 export default defineConfig({
 	plugins: [solid()],
+	base: process.env.BASE_URL ?? '/',
 	define: {
 		MAPTILER_API_KEY: JSON.stringify(maptilerAPIKey),
 	},

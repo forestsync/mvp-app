@@ -32,7 +32,7 @@ jobs:
         run: npm ci
       - name: Build
         env:
-          SERVICE_URL: ${{ vars.SERVICE_URL }}
+          BASE_URL: /${{ github.repository }}/
         run: |
           npm run build
           cp -r static dist
