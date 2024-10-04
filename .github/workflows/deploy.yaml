@@ -33,7 +33,7 @@ jobs:
       - name: Build
         env:
           BASE_URL: /${{ github.repository }}/
-          MAPTILER_API_KEY: ${{ secrets.MAPTILER_API_KEY }}
+          MAPTILER_API_KEY: ${{ vars.MAPTILER_API_KEY }}
         run: |
           npm run build
           cp -r static dist
