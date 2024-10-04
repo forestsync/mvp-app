@@ -21,7 +21,7 @@
     ]
   },
   "dependencies": {
-    "@sinclair/typebox": "0.33.13",
+    "@sinclair/typebox": "0.33.14",
     "maplibre-gl": "4.7.1",
     "solid-js": "1.9.1"
   },
