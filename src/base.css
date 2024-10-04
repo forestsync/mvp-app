@@ -1,0 +1,79 @@
+html {
+  background-color: #022717;
+  font-style: normal;
+  height: 100%;
+  width: 100%;
+  font-family: "Inter", sans-serif;
+  font-optical-sizing: auto;
+  font-style: normal;
+  font-weight: 300;
+  background-image: url("/static/filip-zrnzevic-QsWG0kjPQRY-unsplash.webp");
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+}
+
+strong,
+dt {
+  font-weight: 500;
+}
+
+.f-100 {
+  font-weight: 100;
+}
+
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  margin: 0;
+  font-family: "Afacad Flux", sans-serif;
+  font-optical-sizing: auto;
+  font-weight: 500;
+  font-variation-settings: "slnt" 0;
+}
+
+dl dd {
+  margin-left: 0;
+  margin-bottom: 0.5rem;
+}
+
+main {
+  padding: 2rem;
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+@media screen and (min-width: 800px) {
+  main {
+    grid-auto-flow: column;
+    display: grid;
+    grid-auto-columns: 1fr;
+    grid-gap: 2rem;
+  }
+}
+
+main section {
+  padding-top: 1rem;
+  background-color: white;
+  padding: 2rem;
+  box-shadow: 0px 0px 14px 0px #00000026;
+}
+
+.map {
+  aspect-ratio: 2/1;
+  box-shadow: 0px 0px 14px 0px #00000026;
+}
+
+@media screen and (min-width: 800px) {
+  .map {
+    aspect-ratio: auto;
+  }
+}
