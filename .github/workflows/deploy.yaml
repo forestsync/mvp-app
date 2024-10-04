@@ -30,9 +30,12 @@ jobs:
           cache: "npm"
       - name: Install dependencies
         run: npm ci
+      - name: Extract repository name
+        id: extract-repo
+        run: echo "REPO_NAME=${GITHUB_REPOSITORY##*/}" >> $GITHUB_ENV
       - name: Build
         env:
-          BASE_URL: /${{ github.repository }}/
+          BASE_URL: /${{ env.REPO_NAME }}/
           MAPTILER_API_KEY: ${{ vars.MAPTILER_API_KEY }}
         run: |
           npm run build
