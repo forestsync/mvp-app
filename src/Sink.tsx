@@ -10,7 +10,7 @@ const Sink = () => {
 	const data = useData()
 	const id = path().split('/')[1]
 	const sink = data.carbonSinks.find((s) => s.id === id)
-	const location = sink?.geolocation.split(',').map(Number)
+	const location = sink?.geolocation
 	return (
 		<main>
 			<section>
