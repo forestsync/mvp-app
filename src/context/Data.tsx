@@ -14,6 +14,14 @@ const ID = Type.String({
 	title: 'UUIDv4',
 })
 
+const GeoCoordinates = Type.Tuple(
+	[
+		Type.Number({ minimum: -90, maximum: 90, title: 'Latitude' }),
+		Type.Number({ minimum: -180, maximum: 180, title: 'Longitude' }),
+	],
+	{ title: 'GeoCoordinates' },
+)
+
 const CarbonSinkSchema = Type.Object(
 	{
 		id: Type.String({
@@ -27,10 +35,8 @@ const CarbonSinkSchema = Type.Object(
 		sizeHa: Type.Number({ minimum: 0, example: [2.7] }),
 		plantedDate: Type.Integer({ minimum: 0, example: [43840] }),
 		CO2storedTons: Type.Integer({ minimum: 0, example: [108] }),
-		geolocation: Type.String({
-			minLength: 1,
-			examples: ['57.13551377294552, -2.240892204107957'],
-		}),
+		geolocation: GeoCoordinates,
+		polygon: Type.Optional(Type.Array(GeoCoordinates)),
 	},
 	{ title: 'Carbon Sink' },
 )
