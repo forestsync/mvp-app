@@ -80,7 +80,32 @@ const FullScreenMap = () => {
 							'fill-opacity': 0.8,
 						},
 					})
-					// Center
+					// Label
+					map.addSource(`${sink.id}-label-source`, {
+						type: 'geojson',
+						data: {
+							type: 'Feature',
+							geometry: {
+								type: 'Point',
+								coordinates: [lng, lat],
+							},
+							properties: {},
+						},
+					})
+					map.addLayer({
+						id: `${sink.id}-label`,
+						type: 'symbol',
+						source: `${sink.id}-label-source`,
+						layout: {
+							'symbol-placement': 'point',
+							'text-field': `${sink.name}\n${sink.CO2storedTons} tons`,
+							'text-font': [glyphFonts.bold],
+							'text-offset': [0, 0],
+						},
+						paint: {
+							'text-color': '#3ace1c',
+						},
+					})
 				}
 			}
 		})
@@ -102,8 +127,14 @@ const FullScreenMap = () => {
 	return <div id="map" ref={ref} />
 }
 
-const polylabelToCoordinates = (polylabel: [number, number]) => {
-	return [polylabel[1], polylabel[0]]
+const polylabelToCoordinates = (label: ReturnType<typeof polylabel>) => {
+	return [label[1], label[0]]
 }
 
 export default FullScreenMap
+
+// See https://docs.aws.amazon.com/location/latest/developerguide/esri.html for available fonts
+export const glyphFonts = {
+	regular: 'Ubuntu Regular',
+	bold: 'Ubuntu Medium',
+} as const
