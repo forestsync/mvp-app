@@ -22,7 +22,7 @@ const GeoCoordinates = Type.Tuple(
 	{ title: 'GeoCoordinates' },
 )
 
-const CarbonSinkSchema = Type.Object(
+export const CarbonSinkSchema = Type.Object(
 	{
 		id: Type.String({
 			minLength: 1,

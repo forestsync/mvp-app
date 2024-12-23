@@ -1,8 +1,11 @@
-import { Map as MapLibreGlMap, Marker } from 'maplibre-gl'
+import { Static } from '@sinclair/typebox'
+import { LngLatBounds, Map as MapLibreGlMap, Marker } from 'maplibre-gl'
+import polylabel from 'polylabel'
 import { createEffect, onCleanup, ParentProps, Show } from 'solid-js'
-import { useData } from './context/Data.js'
+import { CarbonSinkSchema, useData } from './context/Data.js'
 import { useRouter } from './context/Router.js'
 import { createMap } from './map/createMap.js'
+import { polylabelToCoordinates } from './polylabelToCoordinates.jsx'
 import { intToDate } from './util/intToDate.js'
 
 const Sink = () => {
@@ -39,7 +42,7 @@ const Sink = () => {
 				</dl>
 			</section>
 			<Show when={location !== undefined}>
-				<SinkMap lat={location![0]} lon={location![1]} />
+				<SinkMap sink={sink!} />
 			</Show>
 		</main>
 	)
@@ -47,22 +50,69 @@ const Sink = () => {
 
 const SinkMap = (
 	props: ParentProps<{
-		lat: number
-		lon: number
+		sink: Static<typeof CarbonSinkSchema>
 	}>,
 ) => {
 	let ref!: HTMLDivElement
 	let map: MapLibreGlMap
 
 	createEffect(() => {
-		map = createMap(
-			ref,
-			{ lat: props.lat, lng: props.lon },
-			{ zoom: 10, attributionControl: false },
-		)
+		const polyCenter =
+			props.sink.polygon !== undefined
+				? polylabelToCoordinates(polylabel([props.sink.polygon], 0.000001))
+				: undefined
+		const [lat, lng] = polyCenter ?? props.sink.geolocation
+
+		map = createMap(ref, { lat, lng }, { zoom: 10, attributionControl: false })
 
 		map.on('load', () => {
-			new Marker().setLngLat({ lat: props.lat, lng: props.lon }).addTo(map)
+			new Marker().setLngLat({ lat, lng }).addTo(map)
+
+			if ((props.sink.polygon?.length ?? 0) > 2) {
+				map.addSource(props.sink.id, {
+					type: 'geojson',
+					data: {
+						type: 'Feature',
+						properties: {},
+						geometry: {
+							type: 'Polygon',
+							coordinates: [props.sink.polygon!],
+						},
+					},
+				})
+				map.addLayer({
+					id: props.sink.id,
+					type: 'fill',
+					source: props.sink.id,
+					layout: {},
+					paint: {
+						'fill-color': '#088',
+						'fill-opacity': 0.8,
+					},
+				})
+
+				try {
+					const first = props.sink.polygon![0]
+					console.log([first[1], first[0]])
+					const bounds = props.sink.polygon!.reduce(
+						(bounds, coord) => {
+							console.log(bounds, coord)
+							return bounds.extend({
+								lon: coord[0],
+								lat: coord[1],
+							})
+						},
+						new LngLatBounds({ lat: first[0], lon: first[1] }),
+					)
+
+					console.log(bounds)
+					map.fitBounds(bounds, {
+						padding: 20,
+					})
+				} catch (err) {
+					console.error(err)
+				}
+			}
 		})
 
 		onCleanup(() => {

@@ -5,6 +5,7 @@ import { useData } from './context/Data.js'
 import { createMap } from './map/createMap.js'
 
 import './FullScreenMap.css'
+import { polylabelToCoordinates } from './polylabelToCoordinates.jsx'
 
 const asNumber = (s: string, fallback: number) => {
 	const n = Number(s)
@@ -125,10 +126,6 @@ const FullScreenMap = () => {
 	})
 
 	return <div id="map" ref={ref} />
-}
-
-const polylabelToCoordinates = (label: ReturnType<typeof polylabel>) => {
-	return [label[1], label[0]]
 }
 
 export default FullScreenMap
