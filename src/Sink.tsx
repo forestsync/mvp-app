@@ -93,7 +93,6 @@ const SinkMap = (
 
 				try {
 					const first = props.sink.polygon![0]
-					console.log([first[1], first[0]])
 					const bounds = props.sink.polygon!.reduce(
 						(bounds, coord) => {
 							console.log(bounds, coord)
@@ -105,7 +104,6 @@ const SinkMap = (
 						new LngLatBounds({ lat: first[0], lon: first[1] }),
 					)
 
-					console.log(bounds)
 					map.fitBounds(bounds, {
 						padding: 20,
 					})

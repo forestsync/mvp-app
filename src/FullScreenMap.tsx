@@ -1,3 +1,4 @@
+import { area, polygon } from '@turf/turf'
 import { LngLat, Map as MapLibreGlMap, Marker, Popup } from 'maplibre-gl'
 import polylabel from 'polylabel'
 import { createEffect, createSignal, onCleanup, Show } from 'solid-js'
@@ -130,85 +131,120 @@ const FullScreenMap = () => {
 				setCoords([...coords(), e.lngLat])
 			}
 		})
-	})
 
-	// Draw first point
-	createEffect(() => {
-		if (map === undefined) return
-		if (loaded() === false) return
-		if (map.getSource('start-point') !== undefined) {
-			map.removeLayer('start-point-drawing')
-			map.removeSource('start-point')
-		}
-		if (coords().length === 1) {
-			const point = coords()[0]
-			map.addSource('start-point', {
-				type: 'geojson',
-				data: {
-					type: 'Feature',
-					properties: {},
-					geometry: {
-						type: 'Point',
-						coordinates: [point.lng, point.lat],
-					},
-				},
-			})
-			map.addLayer({
-				id: 'start-point-drawing',
-				type: 'circle',
-				source: 'start-point',
-				paint: {
-					'circle-color': '#80ed99',
-					'circle-radius': 10,
-					'circle-stroke-width': 2,
-					'circle-stroke-color': '#222222',
-				},
-			})
-		}
+		createEffect(() => {
+			if (drawing()) {
+				map.getCanvas().style.cursor = 'crosshair'
+			} else {
+				map.getCanvas().style.cursor = 'default'
+			}
+		})
 	})
 
 	// Draw polygon
 	createEffect(() => {
 		if (map === undefined) return
 		if (loaded() === false) return
-		if (coords().length < 1) return
-		if (map.getSource('drawing') !== undefined) {
-			map.removeLayer('drawing')
+		// Remove old drawing
+		if (map.getLayer('drawing') !== undefined) map.removeLayer('drawing')
+		if (map.getLayer('drawing-dots') !== undefined)
 			map.removeLayer('drawing-dots')
-			map.removeSource('drawing')
-		}
-		map.addSource('drawing', {
-			type: 'geojson',
-			data: {
-				type: 'Feature',
-				properties: {},
-				geometry: {
-					type: 'Polygon',
-					coordinates: [coords().map((c) => [c.lng, c.lat])],
+		if (map.getLayer('drawing-label') !== undefined)
+			map.removeLayer('drawing-label')
+		if (map.getSource('drawing') !== undefined) map.removeSource('drawing')
+		if (map.getSource('drawing-label-source') !== undefined)
+			map.removeSource('drawing-label-source')
+		// Nothing to draw
+		if (coords().length === 0) return
+		// Draw new
+		if (coords().length < 3) {
+			// Just draw points
+			map.addSource('drawing', {
+				type: 'geojson',
+				data: {
+					type: 'Feature',
+					properties: {},
+					geometry: {
+						type: 'MultiPoint',
+						coordinates: coords().map((c) => [c.lng, c.lat]),
+					},
 				},
-			},
-		})
-		map.addLayer({
-			id: 'drawing',
-			type: 'fill',
-			source: 'drawing',
-			layout: {},
-			paint: {
-				'fill-color': '#088',
-				'fill-opacity': 0.8,
-			},
-		})
+			})
+		} else {
+			map.addSource('drawing', {
+				type: 'geojson',
+				data: {
+					type: 'Feature',
+					properties: {},
+					geometry: {
+						type: 'Polygon',
+						coordinates: [coords().map((c) => [c.lng, c.lat])],
+					},
+				},
+			})
+			map.addLayer({
+				id: 'drawing',
+				type: 'fill',
+				source: 'drawing',
+				layout: {},
+				paint: {
+					'fill-color': '#088',
+					'fill-opacity': 0.8,
+				},
+			})
+		}
 		map.addLayer({
 			id: 'drawing-dots',
 			type: 'circle',
 			source: 'drawing',
 			paint: {
 				'circle-color': '#80ed99',
-				'circle-radius': 10,
-				'circle-stroke-width': 2,
+				'circle-radius': 5,
 				'circle-stroke-color': '#222222',
 			},
 		})
+		// Add label with size
+		if (coords().length >= 3) {
+			const [first, ...rest] = coords().map((c) => [c.lat, c.lng])
+			const p = polygon([[first, ...rest, first]])
+			const a = area(p) / 10000 // Convert square meters to hectares
+			const polyCenter = polylabelToCoordinates(
+				polylabel([coords().map((c) => [c.lat, c.lng])], 0.000001),
+			)
+			map.addSource(`drawing-label-source`, {
+				type: 'geojson',
+				data: {
+					type: 'Feature',
+					geometry: {
+						type: 'Point',
+						coordinates: polyCenter,
+					},
+					properties: {},
+				},
+			})
+			map.addLayer({
+				id: `drawing-label`,
+				type: 'symbol',
+				source: `drawing-label-source`,
+				layout: {
+					'symbol-placement': 'point',
+					'text-field': `${a.toFixed(2)} ha`,
+					'text-font': [glyphFonts.bold],
+					'text-offset': [0, 0],
+				},
+				paint: {
+					'text-color': '#3ace1c',
+				},
+			})
+			console.log(
+				'Polygon',
+				coords()
+					.map((c) => [c.lng, c.lat])
+					.map((c) => c.join(' '))
+					.join(', '),
+			)
+			console.log('Area', a, 'ha')
+		}
 	})
 
 	onCleanup(() => {
