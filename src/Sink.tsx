@@ -6,6 +6,9 @@ import { CarbonSinkSchema, useData } from './context/Data.js'
 import { useRouter } from './context/Router.js'
 import { createMap } from './map/createMap.js'
 import { polylabelToCoordinates } from './polylabelToCoordinates.jsx'
+import { calculateSize } from './util/calculateSize.js'
+import { calculateStorage } from './util/calculateStorage.js'
+import { co2, hectares } from './util/format.js'
 import { intToDate } from './util/intToDate.js'
 
 const Sink = () => {
@@ -13,36 +16,60 @@ const Sink = () => {
 	const data = useData()
 	const id = path().split('/')[1]
 	const sink = data.carbonSinks.find((s) => s.id === id)
-	const location = sink?.geolocation
+	if (sink === undefined) return null
+	return <SinkDetails sink={sink} />
+}
+
+const SinkDetails = (props: { sink: Static<typeof CarbonSinkSchema> }) => {
+	const location = props.sink.geolocation
+	const plantedDate = intToDate(props.sink.plantedDate)
+	const hasPolygon = props.sink.polygon !== undefined
+	const size = hasPolygon
+		? calculateSize({ polygon: props.sink.polygon! })
+		: props.sink.sizeHa
 	return (
 		<main>
 			<section>
-				<h2>{sink!.name}</h2>
+				<h2>{props.sink.name}</h2>
 				<dl>
 					<dt>ID</dt>
-					<dd>{id}</dd>
-					<Show when={sink !== undefined}>
-						<dt>Owner</dt>
-						<dd>
-							<a href={`${import.meta.env.BASE_URL}#owner/${sink!.ownerID}`}>
-								{sink!.owner}
-							</a>
-						</dd>
-						<dt>Country</dt>
-						<dd>{sink!.country}</dd>
-						<dt>Size</dt>
-						<dd>{sink!.sizeHa} ha</dd>
-						<dt>Planted</dt>
-						<dd>{intToDate(sink!.plantedDate).toISOString().slice(0, 10)}</dd>
-						<dt>
-							CO<sub>2</sub>
-						</dt>
-						<dd>{sink!.CO2storedTons} t</dd>
-					</Show>
+					<dd>{props.sink.id}</dd>
+					<dt>Size</dt>
+					<dd>
+						{hectares.format(size)} ha
+						<br />
+						<Show when={hasPolygon}>
+							<small>calculated based on sink dimension</small>
+						</Show>
+					</dd>
+					<dt>Planted</dt>
+					<dd>{plantedDate.toISOString().slice(0, 10)}</dd>
+					<dt>
+						CO<sub>2</sub> stored
+					</dt>
+					<dd>
+						<Show
+							when={hasPolygon}
+							fallback={co2.format(props.sink.CO2storedTons)}
+						>
+							{co2.format(calculateStorage(size, plantedDate))} t<br />
+							<small>
+								calculated based on size and age (10 tons per year per ha)
+							</small>
+						</Show>
+					</dd>
+					<dt>Owner</dt>
+					<dd>
+						<a href={`${import.meta.env.BASE_URL}#owner/${props.sink.ownerID}`}>
+							{props.sink.owner}
+						</a>
+					</dd>
+					<dt>Country</dt>
+					<dd>{props.sink.country}</dd>
 				</dl>
 			</section>
 			<Show when={location !== undefined}>
-				<SinkMap sink={sink!} />
+				<SinkMap sink={props.sink} />
 			</Show>
 		</main>
 	)
@@ -94,13 +121,11 @@ const SinkMap = (
 				try {
 					const first = props.sink.polygon![0]
 					const bounds = props.sink.polygon!.reduce(
-						(bounds, coord) => {
-							console.log(bounds, coord)
-							return bounds.extend({
+						(bounds, coord) =>
+							bounds.extend({
 								lon: coord[0],
 								lat: coord[1],
-							})
-						},
+							}),
 						new LngLatBounds({ lat: first[0], lon: first[1] }),
 					)
 

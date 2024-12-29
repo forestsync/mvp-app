@@ -34,7 +34,12 @@ export const CarbonSinkSchema = Type.Object(
 		country: Type.String({ minLength: 1, example: ['UK'] }),
 		sizeHa: Type.Number({ minimum: 0, example: [2.7] }),
 		plantedDate: Type.Integer({ minimum: 0, example: [43840] }),
-		CO2storedTons: Type.Integer({ minimum: 0, example: [108] }),
+		CO2storedTons: Type.Number({
+			minimum: 0,
+			example: [108],
+			title: 'CO2 stored (tons)',
+			description: 'Amount of CO2 stored in tons.',
+		}),
 		geolocation: GeoCoordinates,
 		polygon: Type.Optional(Type.Array(GeoCoordinates)),
 	},

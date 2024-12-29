@@ -8,6 +8,7 @@ import { createMap } from './map/createMap.js'
 import { polylabelToCoordinates } from './polylabelToCoordinates.jsx'
 
 import './FullScreenMap.css'
+import { co2 } from './util/format.js'
 
 const asNumber = (s: string, fallback: number) => {
 	const n = Number(s)
@@ -55,7 +56,7 @@ const FullScreenMap = () => {
 							new Popup({ offset: 25 }).setHTML(
 								[
 									`<h3>${sink.name}</h3>`,
-									`<p>${sink.CO2storedTons} tons of CO2 stored.</p>`,
+									`<p>${co2.format(sink.CO2storedTons)} tons of CO2 stored.</p>`,
 									`<p><a href="${import.meta.env.BASE_URL}#carbon-sink/${sink.id}">Details</a></p>`,
 								].join(''),
 							),
@@ -105,7 +106,10 @@ const FullScreenMap = () => {
 						source: `${sink.id}-label-source`,
 						layout: {
 							'symbol-placement': 'point',
-							'text-field': `${sink.name}\n${sink.CO2storedTons} tons`,
+							'text-field': [
+								sink.name,
+								`${co2.format(sink.CO2storedTons)} tons`,
+							].join('\n'),
 							'text-font': [glyphFonts.bold],
 							'text-offset': [0, 0],
 						},
