@@ -1,4 +1,4 @@
-nav {
+nav.main {
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -10,7 +10,7 @@ nav {
   height: 64px;
 }
 
-nav a {
+nav.main a {
   text-decoration: none;
   color: inherit;
 }

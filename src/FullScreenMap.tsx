@@ -1,11 +1,12 @@
-import { Map as MapLibreGlMap, Marker, Popup } from 'maplibre-gl'
+import { LngLat, Map as MapLibreGlMap, Marker, Popup } from 'maplibre-gl'
 import polylabel from 'polylabel'
-import { createEffect, onCleanup } from 'solid-js'
+import { createEffect, createSignal, onCleanup, Show } from 'solid-js'
 import { useData } from './context/Data.js'
+import { Draw, NoDraw, Remove } from './LucideIcon.jsx'
 import { createMap } from './map/createMap.js'
+import { polylabelToCoordinates } from './polylabelToCoordinates.jsx'
 
 import './FullScreenMap.css'
-import { polylabelToCoordinates } from './polylabelToCoordinates.jsx'
 
 const asNumber = (s: string, fallback: number) => {
 	const n = Number(s)
@@ -17,6 +18,9 @@ const asNumber = (s: string, fallback: number) => {
 
 const FullScreenMap = () => {
 	const data = useData()
+	const [drawing, setDrawing] = createSignal(false)
+	const [coords, setCoords] = createSignal<Array<LngLat>>([])
+	const [loaded, setLoaded] = createSignal(false)
 
 	let ref!: HTMLDivElement
 	let map: MapLibreGlMap
@@ -36,6 +40,7 @@ const FullScreenMap = () => {
 		)
 
 		map.on('load', () => {
+			setLoaded(true)
 			for (const sink of data.carbonSinks) {
 				const polyCenter =
 					sink.polygon !== undefined
@@ -119,13 +124,119 @@ const FullScreenMap = () => {
 				`${import.meta.env.BASE_URL}#map/${lat.toFixed(6)}/${lng.toFixed(6)}/${map.getZoom()}`,
 			)
 		})
+
+		map.on('click', (e) => {
+			if (drawing()) {
+				setCoords([...coords(), e.lngLat])
+			}
+		})
+	})
+
+	// Draw first point
+	createEffect(() => {
+		if (map === undefined) return
+		if (loaded() === false) return
+		if (map.getSource('start-point') !== undefined) {
+			map.removeLayer('start-point-drawing')
+			map.removeSource('start-point')
+		}
+		if (coords().length === 1) {
+			const point = coords()[0]
+			map.addSource('start-point', {
+				type: 'geojson',
+				data: {
+					type: 'Feature',
+					properties: {},
+					geometry: {
+						type: 'Point',
+						coordinates: [point.lng, point.lat],
+					},
+				},
+			})
+			map.addLayer({
+				id: 'start-point-drawing',
+				type: 'circle',
+				source: 'start-point',
+				paint: {
+					'circle-color': '#80ed99',
+					'circle-radius': 10,
+					'circle-stroke-width': 2,
+					'circle-stroke-color': '#222222',
+				},
+			})
+		}
+	})
+
+	// Draw polygon
+	createEffect(() => {
+		if (map === undefined) return
+		if (loaded() === false) return
+		if (coords().length < 1) return
+		if (map.getSource('drawing') !== undefined) {
+			map.removeLayer('drawing')
+			map.removeLayer('drawing-dots')
+			map.removeSource('drawing')
+		}
+		map.addSource('drawing', {
+			type: 'geojson',
+			data: {
+				type: 'Feature',
+				properties: {},
+				geometry: {
+					type: 'Polygon',
+					coordinates: [coords().map((c) => [c.lng, c.lat])],
+				},
+			},
+		})
+		map.addLayer({
+			id: 'drawing',
+			type: 'fill',
+			source: 'drawing',
+			layout: {},
+			paint: {
+				'fill-color': '#088',
+				'fill-opacity': 0.8,
+			},
+		})
+		map.addLayer({
+			id: 'drawing-dots',
+			type: 'circle',
+			source: 'drawing',
+			paint: {
+				'circle-color': '#80ed99',
+				'circle-radius': 10,
+				'circle-stroke-width': 2,
+				'circle-stroke-color': '#222222',
+			},
+		})
 	})
 
 	onCleanup(() => {
 		map?.remove()
 	})
 
-	return <div id="map" ref={ref} />
+	return (
+		<div id="map-container">
+			<nav>
+				<Show
+					when={drawing()}
+					fallback={
+						<button onClick={() => setDrawing(true)}>
+							<Draw />
+						</button>
+					}
+				>
+					<button onClick={() => setDrawing(false)}>
+						<NoDraw />
+					</button>
+					<button onClick={() => setCoords(coords().slice(0, -1))}>
+						<Remove />
+					</button>
+				</Show>
+			</nav>
+			<div id="map" ref={ref} />
+		</div>
+	)
 }
 
 export default FullScreenMap

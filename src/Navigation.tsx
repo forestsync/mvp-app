@@ -1,7 +1,7 @@
 import './Navigation.css'
 
 const Navigation = () => (
-	<nav>
+	<nav class="main">
 		<a href={`${import.meta.env.BASE_URL}#`}>
 			<h1>Forest Sync</h1>
 		</a>
