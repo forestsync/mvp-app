@@ -138,7 +138,9 @@ const SinkMap = (
 			}
 
 			// Add planet.com data
-			fetch(`${BASE_URL}data/planet.com/${props.sink.id}-2024-03-21.json`)
+			fetch(
+				`${import.meta.env.BASE_URL}data/planet.com/${props.sink.id}-2024-03-21.json`,
+			)
 				.then((res) => res.json() as Promise<Array<PlanetCarbonData>>)
 				.then((pixels) =>
 					pixels.filter((p) => p.aboveground_live_carbon_density ?? 0 > 0),
