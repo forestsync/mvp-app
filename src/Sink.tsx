@@ -136,6 +136,40 @@ const SinkMap = (
 					console.error(err)
 				}
 			}
+
+			// Add planet.com data
+			fetch(`/data/planet.com/${props.sink.id}-2024-03-21.json`)
+				.then((res) => res.json() as Promise<Array<PlanetCarbonData>>)
+				.then((pixels) =>
+					pixels.filter((p) => p.aboveground_live_carbon_density ?? 0 > 0),
+				)
+				.then((pixels) => {
+					for (const pixelId in pixels) {
+						const pixel = pixels[pixelId]
+						map.addSource(`pixel-${pixelId}`, {
+							type: 'geojson',
+							data: {
+								type: 'Feature',
+								properties: {},
+								geometry: {
+									type: 'Polygon',
+									coordinates: [pixel.pixel_boundary.coordinates[0]],
+								},
+							},
+						})
+						map.addLayer({
+							id: `pixel-${pixelId}`,
+							type: 'fill',
+							source: `pixel-${pixelId}`,
+							layout: {},
+							paint: {
+								'fill-color': '#0f0',
+								'fill-opacity': pixel.aboveground_live_carbon_density / 100,
+							},
+						})
+					}
+				})
+				.catch(console.error)
 		})
 
 		onCleanup(() => {
@@ -147,3 +181,33 @@ const SinkMap = (
 }
 
 export default Sink
+
+type PlanetCarbonData = {
+	aoi_id: string // e.g. "efdd1bd4-118f-442e-8eb8-39a05f2fed51",
+	data_request_id: string // e.g. "2aa0a4cc-8e04-4042-ac16-deb51a8a2ca2",
+	crs: string // e.g. "EPSG:4326",
+	date: string // e.g. "2024-03-21",
+	x: number // e.g. 8.1412875,
+	y: number // e.g. 45.1471875,
+	pixel_boundary: {
+		coordinates: Array<Array<[number, number]>> /* e.g [
+			[
+				[8.141275, 45.1472],
+				[8.141275, 45.147175],
+				[8.141300000000001, 45.147175],
+				[8.141300000000001, 45.1472],
+				[8.141275, 45.1472]
+			]
+		] */
+		type: 'Polygon'
+	}
+	aboveground_live_carbon_density: number // e.g. 0,
+	aboveground_live_carbon_density_uncertainty_lower_bound: number // e.g. 0,
+	aboveground_live_carbon_density_uncertainty_upper_bound: number // e.g. 65,
+	canopy_cover: number // e.g. 0,
+	canopy_cover_uncertainty_lower_bound: number // e.g. 0,
+	canopy_cover_uncertainty_upper_bound: number // e.g. 10,
+	canopy_height: number // e.g. 0,
+	canopy_height_uncertainty_lower_bound: number // e.g. 0,
+	canopy_height_uncertainty_upper_bound: number // e.g. 1
+}
